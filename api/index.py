@@ -18,6 +18,24 @@ except ImportError:
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 
+class QuitarPrefijo:
+    """Si Vercel entrega /api/index/login, lo deja como /login."""
+    PREFIJOS = ("/api/index.py", "/api/index")
+
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        ruta = environ.get("PATH_INFO", "")
+        for p in self.PREFIJOS:
+            if ruta == p or ruta.startswith(p + "/"):
+                environ["PATH_INFO"] = ruta[len(p):] or "/"
+                break
+        return self.wsgi_app(environ, start_response)
+
+
+app.wsgi_app = QuitarPrefijo(app.wsgi_app)
+
 app.secret_key = os.environ.get("SECRET_KEY")
 if not app.secret_key:
     raise RuntimeError("La variable de entorno SECRET_KEY no está definida.")
@@ -100,6 +118,10 @@ def logout():
     session.clear()
     flash("Sesión cerrada.", "exito")
     return redirect(url_for("login"))
+
+@app.errorhandler(404)
+def no_encontrado(e):
+    return f"404 de Flask. Ruta recibida: {request.path}", 404
 
 
 if __name__ == "__main__":
