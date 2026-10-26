@@ -124,5 +124,15 @@ def no_encontrado(e):
     return f"404 de Flask. Ruta recibida: {request.path}", 404
 
 
+@app.route("/diag")
+def diag():
+    with servicios._conectar() as conn:
+        r = conn.execute(
+            "SELECT current_database() AS base, current_schemas(false) AS schemas, "
+            "(SELECT count(*) FROM pg_proc WHERE proname = 'registrar_usuario') AS funciones"
+        ).fetchone()
+    return str(r)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
