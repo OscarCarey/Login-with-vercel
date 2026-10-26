@@ -23,7 +23,8 @@ class CServicios:
             # 'with' hace commit al salir sin error y cierra la conexión
             with self._conectar() as conn:
                 conn.execute(
-                    "SELECT registrar_usuario(%s, %s, %s)",
+                    
+                    "SELECT registrar_usuario(%s::varchar, %s::varchar, %s::varchar)",
                     (cedula, nombre, clave_hash),
                 )
             return True, "Usuario registrado correctamente. Ya puedes iniciar sesión."
@@ -34,7 +35,8 @@ class CServicios:
         """Devuelve el usuario (dict, incluye 'clave') o None."""
         with self._conectar() as conn:
             return conn.execute(
-                "SELECT * FROM obtener_usuario(%s)", (cedula,)
+
+                "SELECT * FROM obtener_usuario(%s::varchar)", (cedula,)
             ).fetchone()
 
     def iniciar_sesion(self, cedula, clave):
