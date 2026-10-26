@@ -104,9 +104,9 @@ def login():
             else:
                 flash("Acción no válida.", "error")
 
-        except Exception:
+        except Exception as e:
             log.exception("Error en /login")
-            flash("Error de conexión con la base de datos.", "error")
+            flash(f"Error: {type(e).__name__}: {e}", "error")
 
         return redirect(url_for("login"))
 
