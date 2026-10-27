@@ -1,63 +1,265 @@
+{% set mensajes = get_flashed_messages(with_categories=true) %}
+{% macro logo(clase='') -%}
+<svg class="logo {{ clase }}" viewBox="0 0 66 64" role="img" aria-label="OC" fill="none" stroke-width="4" stroke-linecap="round">
+  <circle class="o" cx="26" cy="32" r="17" pathLength="1"/>
+  <path class="c" d="M52.02 19.98A17 17 0 1 0 52.02 44.02" pathLength="1"/>
+</svg>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Acceso de clientes</title>
+  <title>Acceso de clientes · OC</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -8 78 80'%3E%3Crect x='-6' y='-8' width='78' height='80' rx='16' fill='%230f2433'/%3E%3Ccircle cx='26' cy='32' r='17' fill='none' stroke='%23f3f5f4' stroke-width='4'/%3E%3Cpath d='M52.02 19.98A17 17 0 1 0 52.02 44.02' fill='none' stroke='%23c9a45c' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Decide antes de pintar si se muestra la bienvenida: una vez por sesión, sin mensajes flash y sin "reducir movimiento" -->
+ <script>
+  
+  (function () {
+    try {
+      var visto = sessionStorage.getItem("oc_intro");
+      var reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var hayMensajes = document.documentElement.getAttribute("data-hay-msg") === "true";
+      if (!visto && !reducir && !hayMensajes) {
+        document.documentElement.classList.add("intro");
+        sessionStorage.setItem("oc_intro", "1");
+      }
+    } catch (e) {}
+  })();
+</script>
+
   <style>
+    :root {
+      --panel: #0f2433;      /* tinta azul profunda */
+      --papel: #f6f7f5;      /* fondo del formulario */
+      --tinta: #0e1c2b;
+      --tenue: #5b6775;
+      --linea: #d9dedd;
+      --verde: #1b6b58;      /* verde de libro contable: acción principal */
+      --verde-osc: #155a49;
+      --laton: #c9a45c;      /* latón: solo en el logo y la línea de margen */
+      --foco: #2f7f9e;
+    }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-    .contenedor { max-width: 800px; margin: 30px auto; display: flex; gap: 20px; flex-wrap: wrap; }
-    .tarjeta { flex: 1; min-width: 280px; background: #fff; padding: 24px;
-               border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
-    h1 { text-align: center; color: #333; }
-    h2 { margin-top: 0; color: #333; }
-    label { display: block; margin: 12px 0 4px; font-size: 14px; color: #555; }
-    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
-    button { width: 100%; margin-top: 18px; padding: 11px; border: 0; border-radius: 4px;
-             background: #1a73e8; color: #fff; font-size: 15px; cursor: pointer; }
-    button:hover { background: #1558b0; }
-    .verde { background: #2e9e5b; } .verde:hover { background: #237a46; }
-    .mensaje { max-width: 800px; margin: 10px auto; padding: 12px; border-radius: 4px; }
-    .exito { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
+    html, body { margin: 0; }
+    body {
+      font-family: "Manrope", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+      font-size: 15px; line-height: 1.5; color: var(--tinta); background: var(--papel);
+    }
+
+    /* ---------- Logo ---------- */
+    .logo { display: block; }
+    .logo .o { stroke: #f3f5f4; }
+    .logo .c { stroke: var(--laton); }
+
+    /* ---------- Estructura ---------- */
+    .pagina { display: grid; grid-template-columns: minmax(340px, 5fr) 6fr; min-height: 100vh; }
+
+    .marca {
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 44px 56px 56px 104px; color: #e9eef0; background-color: var(--panel);
+      /* renglones de libro contable, muy tenues */
+      background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 39px, rgba(255,255,255,.045) 39px, rgba(255,255,255,.045) 40px);
+    }
+    .marca::before { /* línea de margen del libro */
+      content: ""; position: absolute; top: 0; bottom: 0; left: 72px; width: 1px; background: rgba(201,164,92,.45);
+    }
+    .nombre { display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 15px; }
+    .nombre .logo { width: 46px; }
+    .mensaje-marca h2 { margin: 0 0 12px; max-width: 14ch; font-size: clamp(28px, 2.8vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -.02em; }
+    .mensaje-marca p { margin: 0; color: rgba(233,238,240,.66); }
+
+    .acceso { display: flex; align-items: center; justify-content: center; padding: 48px 32px; }
+    .caja { width: 100%; max-width: 380px; }
+
+    /* ---------- Pestañas ---------- */
+    .tabs { display: flex; gap: 28px; margin-bottom: 28px; border-bottom: 1px solid var(--linea); }
+    .tab {
+      margin-bottom: -1px; padding: 0 0 12px; font: inherit; font-weight: 600; color: var(--tenue);
+      background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer;
+    }
+    .tab:hover { color: var(--tinta); }
+    .tab[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--verde); }
+
+    h1 { margin: 0 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -.015em; }
+    .sub { margin: 0 0 8px; color: var(--tenue); }
+
+    label { display: block; margin: 18px 0 6px; font-size: 13.5px; font-weight: 600; }
+    input {
+      width: 100%; padding: 11px 12px; font: inherit; color: var(--tinta);
+      background: #fff; border: 1px solid var(--linea); border-radius: 6px;
+    }
+    input:hover { border-color: #b8bfbe; }
+    .ayuda { margin: 6px 0 0; font-size: 13px; color: var(--tenue); }
+
+    .principal {
+      width: 100%; margin-top: 26px; padding: 12px 14px; font: inherit; font-weight: 600; color: #fff;
+      background: var(--verde); border: 0; border-radius: 6px; cursor: pointer;
+    }
+    .principal:hover { background: var(--verde-osc); }
+
+    input:focus-visible, button:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+    .mensaje { margin: 0 0 20px; padding: 10px 12px; font-size: 14px; border: 1px solid; border-radius: 6px; }
+    .exito { background: #edf6f1; color: #1b5a37; border-color: #b8dcc6; }
+    .error { background: #fbeeed; color: #8a2a22; border-color: #eec3bf; }
+
+    [hidden] { display: none !important; }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .vista:not([hidden]) { animation: aparece .25s ease; }
+      @keyframes aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    }
+
+    /* ---------- Bienvenida (solo si <html class="intro">) ---------- */
+    .bienvenida { display: none; }
+    .intro .bienvenida {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+      background: var(--panel); cursor: pointer;
+      animation: cortina 3.2s cubic-bezier(.76, 0, .24, 1) forwards;
+    }
+    .bienvenida .logo { width: 104px; }
+    .intro .bienvenida .o, .intro .bienvenida .c { stroke-dasharray: 1.02 1.02; stroke-dashoffset: 1.02; animation: trazo 1s cubic-bezier(.4, 0, .2, 1) forwards; }
+    .intro .bienvenida .o { animation-delay: .25s; }
+    .intro .bienvenida .c { animation-delay: .75s; }
+    .bienvenida .texto { color: rgba(243,245,244,.85); font-weight: 500; font-size: 17px; letter-spacing: .03em; opacity: 0; animation: texto .6s ease 1.55s forwards; }
+    .bienvenida .raya { width: 0; height: 2px; background: var(--laton); animation: raya .7s ease 1.75s forwards; }
+    .bienvenida.omitir { display: none !important; }
+
+    @keyframes trazo { to { stroke-dashoffset: 0; } }
+    @keyframes texto { to { opacity: 1; } }
+    @keyframes raya { to { width: 56px; } }
+    @keyframes cortina {
+      0%, 72% { transform: translateY(0); visibility: visible; }
+      100% { transform: translateY(-100%); visibility: hidden; }
+    }
+
+    /* ---------- Móvil ---------- */
+    @media (max-width: 860px) {
+      .pagina { grid-template-columns: 1fr; min-height: 0; }
+      .marca { padding: 20px 24px; flex-direction: row; justify-content: flex-start; }
+      .marca::before, .mensaje-marca { display: none; }
+      .nombre .logo { width: 38px; }
+      .acceso { align-items: flex-start; padding: 36px 24px 48px; }
+    }
   </style>
 </head>
-<body>
-  <h1>Sistema de clientes</h1>
+<body data-msg="{{ mensajes[0][0] if mensajes else '' }}">
 
-  {% with mensajes = get_flashed_messages(with_categories=true) %}
-    {% for categoria, texto in mensajes %}
-      <div class="mensaje {{ categoria }}">{{ texto }}</div>
-    {% endfor %}
-  {% endwith %}
-
-  <div class="contenedor">
-    <div class="tarjeta">
-      <h2>Iniciar sesión</h2>
-      <form method="post" action="{{ url_for('login') }}">
-        <input type="hidden" name="accion" value="login">
-        <label for="l_cedula">Cédula</label>
-        <input id="l_cedula" name="cedula" required maxlength="20">
-        <label for="l_clave">Contraseña</label>
-        <input id="l_clave" type="password" name="clave" required>
-        <button type="submit">Entrar</button>
-      </form>
-    </div>
-
-    <div class="tarjeta">
-      <h2>Registrarse</h2>
-      <form method="post" action="{{ url_for('login') }}">
-        <input type="hidden" name="accion" value="registro">
-        <label for="r_cedula">Cédula</label>
-        <input id="r_cedula" name="cedula" required maxlength="20">
-        <label for="r_nombre">Nombre</label>
-        <input id="r_nombre" name="nombre" required maxlength="100">
-        <label for="r_clave">Contraseña (mín. 6 caracteres)</label>
-        <input id="r_clave" type="password" name="clave" required minlength="6">
-        <button type="submit" class="verde">Crear cuenta</button>
-      </form>
-    </div>
+  <!-- Bienvenida animada -->
+  <div class="bienvenida" id="bienvenida" aria-hidden="true">
+    {{ logo() }}
+    <div class="texto">Bienvenido</div>
+    <div class="raya"></div>
   </div>
+
+  <div class="pagina">
+    <aside class="marca">
+      <div class="nombre">
+        {{ logo() }}
+        <span>Sistema de clientes</span>
+      </div>
+      <div class="mensaje-marca">
+        <h2>Tu saldo y tus abonos, siempre al día.</h2>
+        <p>Ingresa con tu cédula para consultarlos.</p>
+      </div>
+    </aside>
+
+    <main class="acceso">
+      <div class="caja">
+        {% for categoria, texto in mensajes %}
+          <div class="mensaje {{ categoria }}" role="alert">{{ texto }}</div>
+        {% endfor %}
+
+        <div class="tabs" role="tablist" aria-label="Acceso">
+          <button type="button" class="tab" role="tab" id="tab-login" data-vista="login" aria-controls="vista-login" aria-selected="true">Iniciar sesión</button>
+          <button type="button" class="tab" role="tab" id="tab-registro" data-vista="registro" aria-controls="vista-registro" aria-selected="false" tabindex="-1">Crear cuenta</button>
+        </div>
+
+        <section class="vista" id="vista-login" role="tabpanel" aria-labelledby="tab-login">
+          <h1>Accede a tu cuenta</h1>
+          <p class="sub">Consulta tu saldo y tus abonos.</p>
+          <form method="post" action="{{ url_for('login') }}">
+            <input type="hidden" name="accion" value="login">
+            <label for="l_cedula">Cédula</label>
+            <input id="l_cedula" name="cedula" required maxlength="20" autocomplete="username">
+            <label for="l_clave">Contraseña</label>
+            <input id="l_clave" type="password" name="clave" required autocomplete="current-password">
+            <button type="submit" class="principal">Iniciar sesión</button>
+          </form>
+        </section>
+
+        <section class="vista" id="vista-registro" role="tabpanel" aria-labelledby="tab-registro" hidden>
+          <h1>Crea tu cuenta</h1>
+          <p class="sub">Solo necesitas tu cédula, tu nombre y una contraseña.</p>
+          <form method="post" action="{{ url_for('login') }}" id="form-registro">
+            <input type="hidden" name="accion" value="registro">
+            <label for="r_cedula">Cédula</label>
+            <input id="r_cedula" name="cedula" required maxlength="20" autocomplete="off">
+            <label for="r_nombre">Nombre completo</label>
+            <input id="r_nombre" name="nombre" required maxlength="100" autocomplete="name">
+            <label for="r_clave">Contraseña</label>
+            <input id="r_clave" type="password" name="clave" required minlength="6" autocomplete="new-password" aria-describedby="ayuda-clave">
+            <p id="ayuda-clave" class="ayuda">Mínimo 6 caracteres.</p>
+            <button type="submit" class="principal">Crear cuenta</button>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      /* Bienvenida: clic para saltarla; se retira del DOM al terminar */
+      var intro = document.getElementById("bienvenida");
+      if (document.documentElement.classList.contains("intro")) {
+        intro.addEventListener("click", function () { intro.classList.add("omitir"); });
+        intro.addEventListener("animationend", function (e) {
+          if (e.animationName === "cortina") { intro.classList.add("omitir"); }
+        });
+      }
+
+      /* Pestañas */
+      var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+      var primerCampo = { login: "l_cedula", registro: "r_cedula" };
+
+      function mostrar(nombre, enfocar) {
+        tabs.forEach(function (t) {
+          var activa = t.getAttribute("data-vista") === nombre;
+          t.setAttribute("aria-selected", activa ? "true" : "false");
+          t.tabIndex = activa ? 0 : -1;
+          document.getElementById("vista-" + t.getAttribute("data-vista")).hidden = !activa;
+        });
+        if (enfocar) { document.getElementById(primerCampo[nombre]).focus(); }
+      }
+
+      tabs.forEach(function (t, i) {
+        t.addEventListener("click", function () { mostrar(t.getAttribute("data-vista"), true); });
+        t.addEventListener("keydown", function (e) {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") { return; }
+          var s = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+          mostrar(s.getAttribute("data-vista"), false);
+          s.focus();
+        });
+      });
+
+      /* Si un registro falla, la página recarga y se vuelve a abrir "Crear cuenta" */
+      try {
+        document.getElementById("form-registro").addEventListener("submit", function () {
+          sessionStorage.setItem("oc_tab", "registro");
+        });
+        if (sessionStorage.getItem("oc_tab") === "registro" && document.body.getAttribute("data-msg") === "error") {
+          mostrar("registro", false);
+        }
+        sessionStorage.removeItem("oc_tab");
+      } catch (e) {}
+    })();
+  </script>
 </body>
 </html>
